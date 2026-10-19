@@ -25,6 +25,10 @@ public class PlayerMovement : MonoBehaviour
 
     private void Awake()
     {
+        // Smooth frame pacing and prevent thermal throttling / high battery drain on laptops
+        Application.targetFrameRate = 60;
+        QualitySettings.vSyncCount = 1;
+
         controller = GetComponent<CharacterController>();
         LockCursor();
     }

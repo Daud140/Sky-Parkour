@@ -27,13 +27,17 @@ public class GameUI : MonoBehaviour
         Instance = this;
         Time.timeScale = 1f;
 
+        // Enforce 60 FPS cap & VSync for optimal laptop thermals, battery life, and smooth gameplay
+        QualitySettings.vSyncCount = 1;
+        Application.targetFrameRate = 60;
+
         // Auto-fix EventSystem input module dynamically at runtime
         FixEventSystem();
     }
 
     private void FixEventSystem()
     {
-        var es = Object.FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+        var es = Object.FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
         if (es != null)
         {
             var standalone = es.GetComponent<UnityEngine.EventSystems.StandaloneInputModule>();
