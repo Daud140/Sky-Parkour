@@ -40,19 +40,32 @@ A fast-paced, atmospheric first-person 3D parkour game built in **Unity 6** util
 
 ```
 Assets/_Project/
-├── Materials/        # Basalt, magma rock, glowing lava, checkpoints, and backdrop shaders
+├── Materials/        # Basalt, magma rock, molten lava, storm clouds, skybox, embers & smoke
 ├── Scripts/
 │   ├── Checkpoint.cs       # Trigger collision, material state swap, audio chime, UI updates
 │   ├── FinishLine.cs       # End-of-course detection and victory screen trigger
-│   ├── GameUI.cs           # HUD canvas controller (live timer, checkpoint tracker, results)
+│   ├── GameUI.cs           # HUD canvas controller (live timer, checkpoint tracker, 60 FPS lock)
 │   ├── HazardTrigger.cs    # Kill zone and moving obstacle damage triggers
+│   ├── LavaFlow.cs         # Smooth texture UV scrolling for viscous lava & storm clouds
 │   ├── Oscillator.cs       # Trigonometric harmonic motion for moving platforms
 │   ├── PlayerMovement.cs   # CharacterController parkour physics, coyote time, and air control
 │   ├── PlayerRespawn.cs    # Coordinate tracking and character teleportation
 │   └── Editor/
 │       └── SkyParkourBuilder.cs  # Procedural level generator and scene assembler
+├── Settings/
+│   └── Volcanic_VolumeProfile.asset  # URP post-processing (ACES tonemapping, bloom, vignette)
 └── Textures/         # PBR surface textures (molten lava, basalt, magma, moss)
 ```
+
+---
+
+## ⚡ Laptop & Mobile GPU Optimization
+
+This project is pre-configured to run with a rock-solid, smooth 60 FPS on laptops (both integrated and dedicated GPUs) while keeping thermals and battery usage cool:
+- **Frame Rate Capping & VSync**: Automatically enabled in `GameUI.Awake()` and `QualitySettings` to eliminate screen tearing, microstuttering, and GPU fan throttling.
+- **Tuned Universal Render Pipeline**: Shadow maps are balanced with optimized filtering (`SoftShadowQuality: Medium`, 1024 shadow atlas) to maximize fill-rate efficiency on mobile GPUs.
+- **Static Geometry & Material Sharing**: Course spires, canyon bluffs, and platforms are flagged as static with shared materials for maximum SRP batching throughput.
+- **Budgeted Particles**: Rising embers and smoke particles are strictly capped with local bounds to prevent overdraw.
 
 ---
 
@@ -71,4 +84,4 @@ Assets/_Project/
 4. Select the cloned `Sky-Parkour` folder.
 5. In the Unity Editor, open `Assets/Scenes/SampleScene.unity`.
 6. *(Optional)* To regenerate or customize the course, click **Tools > Sky Parkour > Build Volcanic Lava Canyon Course** from the top menu.
-7. Click **Play** and start running!
+7. Click **Play** (▶) and start running!
