@@ -6,7 +6,11 @@ public class HazardTrigger : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            other.GetComponent<PlayerRespawn>()?.Respawn();
+            var respawn = other.GetComponent<PlayerRespawn>();
+            if (respawn != null)
+            {
+                respawn.Die();
+            }
         }
     }
 }
