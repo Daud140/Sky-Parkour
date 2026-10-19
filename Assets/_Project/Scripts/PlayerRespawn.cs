@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class PlayerRespawn : MonoBehaviour
 {
+    [SerializeField] private Transform startCheckpoint;
     [SerializeField] private Transform currentCheckpoint;
 
     [Header("Death Sound Effect")]
@@ -16,6 +17,11 @@ public class PlayerRespawn : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         movement = GetComponent<PlayerMovement>();
+
+        if (startCheckpoint == null && currentCheckpoint != null)
+        {
+            startCheckpoint = currentCheckpoint;
+        }
 
         deathAudioSource = GetComponent<AudioSource>();
         if (deathAudioSource == null)
@@ -33,9 +39,39 @@ public class PlayerRespawn : MonoBehaviour
 #endif
     }
 
+    public void SetStartCheckpoint(Transform start)
+    {
+        startCheckpoint = start;
+        if (currentCheckpoint == null)
+        {
+            currentCheckpoint = start;
+        }
+    }
+
     public void SetCheckpoint(Transform newCheckpoint)
     {
         currentCheckpoint = newCheckpoint;
+    }
+
+    public void RespawnToStart()
+    {
+        if (startCheckpoint != null)
+        {
+            currentCheckpoint = startCheckpoint;
+        }
+
+        if (controller != null && currentCheckpoint != null)
+        {
+            controller.enabled = false;
+            transform.position = currentCheckpoint.position;
+            transform.rotation = currentCheckpoint.rotation;
+            controller.enabled = true;
+        }
+
+        if (movement != null)
+        {
+            movement.ResetVelocity();
+        }
     }
 
     public void Respawn()

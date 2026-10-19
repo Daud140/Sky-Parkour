@@ -43,15 +43,23 @@ public class SkyParkourBuilder : EditorWindow
         GUI.backgroundColor = new Color(1.0f, 0.35f, 0.1f);
         if (GUILayout.Button("Build Dark Volcanic Storm Canyon", GUILayout.Height(48)))
         {
-            GenerateLevel();
+            GenerateLevel(true);
         }
         GUI.backgroundColor = Color.white;
     }
 
-    public static void GenerateLevel()
+    public static void GenerateLevel(bool showDialog = false)
     {
         AssetDatabase.Refresh();
+        string targetScenePath = "Assets/Scenes/SampleScene.unity";
         var activeScene = EditorSceneManager.GetActiveScene();
+        if (string.IsNullOrEmpty(activeScene.path) || !activeScene.path.Replace('\\', '/').EndsWith(targetScenePath))
+        {
+            if (System.IO.File.Exists(targetScenePath))
+            {
+                activeScene = EditorSceneManager.OpenScene(targetScenePath, OpenSceneMode.Single);
+            }
+        }
         Undo.IncrementCurrentGroup();
         int undoGroup = Undo.GetCurrentGroup();
 
@@ -118,66 +126,87 @@ public class SkyParkourBuilder : EditorWindow
         // 13. Setup Player & Camera (Camera background set to dark red-black fallback, death sound assigned)
         GameObject player = SetupPlayer(root.transform, startCheckpointObj.transform, deathClip);
 
-        // 14. Stage 1: Precision Rock Jumps
-        CreateRockPlatform("Platform_1", root.transform, new Vector3(0f, 0.9f, 8.5f), new Vector3(3.4f, 1.0f, 3.4f), matRock, 102);
-        CreateRockPlatform("Platform_2", root.transform, new Vector3(2.8f, 2.2f, 16f), new Vector3(3.0f, 1.0f, 3.0f), matRock, 103);
-        CreateRockPlatform("Platform_3", root.transform, new Vector3(-2.4f, 3.6f, 23.5f), new Vector3(3.0f, 1.0f, 3.0f), matRock, 104);
-        CreateRockPlatform("Platform_4", root.transform, new Vector3(1.8f, 5.0f, 31f), new Vector3(2.8f, 1.0f, 2.8f), matRock, 105);
+        // 14. Course Containers: Easy Mode (2 Jumps, No Checkpoints) & Hard Mode (Full Volcanic Chasm)
+        GameObject courseHard = new GameObject("Course_Hard");
+        courseHard.transform.parent = root.transform;
+
+        GameObject courseEasy = new GameObject("Course_Easy");
+        courseEasy.transform.parent = root.transform;
+
+        // --- HARD COURSE (3 Stages, 2 Checkpoints, Hazards, Spanning to Z = 129) ---
+        // Stage 1: Precision Rock Jumps
+        CreateRockPlatform("Platform_1", courseHard.transform, new Vector3(0f, 0.9f, 8.5f), new Vector3(3.4f, 1.0f, 3.4f), matRock, 102);
+        CreateRockPlatform("Platform_2", courseHard.transform, new Vector3(2.8f, 2.2f, 16f), new Vector3(3.0f, 1.0f, 3.0f), matRock, 103);
+        CreateRockPlatform("Platform_3", courseHard.transform, new Vector3(-2.4f, 3.6f, 23.5f), new Vector3(3.0f, 1.0f, 3.0f), matRock, 104);
+        CreateRockPlatform("Platform_4", courseHard.transform, new Vector3(1.8f, 5.0f, 31f), new Vector3(2.8f, 1.0f, 2.8f), matRock, 105);
 
         // Hazard 1: Rotating volcanic hazard beam
-        GameObject hazard1 = CreateHazardBar("Hazard_RotatingBar1", root.transform, new Vector3(0f, 4.6f, 23.5f), new Vector3(7.5f, 0.5f, 0.5f), matLava);
+        GameObject hazard1 = CreateHazardBar("Hazard_RotatingBar1", courseHard.transform, new Vector3(0f, 4.6f, 23.5f), new Vector3(7.5f, 0.5f, 0.5f), matLava);
         var osc1 = hazard1.AddComponent<Oscillator>();
         osc1.rotationSpeed = new Vector3(0, 75f, 0);
 
-        // 15. Checkpoint 1 (Rock Sanctuary at Z = 39)
-        CreateRockPlatform("Checkpoint1_Platform", root.transform, new Vector3(0, 6.2f, 39f), new Vector3(6.5f, 1.4f, 6.5f), matRock, 106);
-        CreateCheckpoint("Checkpoint_1", root.transform, new Vector3(0, 7.0f, 39f), matCpInactive, matCpActive, chimeClip);
+        // Checkpoint 1 (Rock Sanctuary at Z = 39)
+        CreateRockPlatform("Checkpoint1_Platform", courseHard.transform, new Vector3(0, 6.2f, 39f), new Vector3(6.5f, 1.4f, 6.5f), matRock, 106);
+        CreateCheckpoint("Checkpoint_1", courseHard.transform, new Vector3(0, 7.0f, 39f), matCpInactive, matCpActive, chimeClip);
 
-        // 16. Stage 2: Moving Magma Slabs & Propeller Hazards
-        GameObject plat5 = CreateRockPlatform("Platform_5_MovingH", root.transform, new Vector3(-2f, 7.8f, 47f), new Vector3(3.4f, 0.9f, 3.4f), matLava, 107, isStatic: false);
+        // Stage 2: Moving Magma Slabs & Propeller Hazards
+        GameObject plat5 = CreateRockPlatform("Platform_5_MovingH", courseHard.transform, new Vector3(-2f, 7.8f, 47f), new Vector3(3.4f, 0.9f, 3.4f), matLava, 107, isStatic: false);
         var osc5 = plat5.AddComponent<Oscillator>();
         osc5.moveDirection = Vector3.right;
         osc5.moveDistance = 3.6f;
         osc5.moveSpeed = 1.9f;
 
-        CreateRockPlatform("Platform_6", root.transform, new Vector3(3.2f, 9.4f, 55f), new Vector3(2.8f, 0.9f, 2.8f), matRock, 108);
+        CreateRockPlatform("Platform_6", courseHard.transform, new Vector3(3.2f, 9.4f, 55f), new Vector3(2.8f, 0.9f, 2.8f), matRock, 108);
 
-        GameObject plat7 = CreateRockPlatform("Platform_7_MovingV", root.transform, new Vector3(0f, 11.0f, 63f), new Vector3(3.2f, 0.9f, 3.2f), matLava, 109, isStatic: false);
+        GameObject plat7 = CreateRockPlatform("Platform_7_MovingV", courseHard.transform, new Vector3(0f, 11.0f, 63f), new Vector3(3.2f, 0.9f, 3.2f), matLava, 109, isStatic: false);
         var osc7 = plat7.AddComponent<Oscillator>();
         osc7.moveDirection = Vector3.up;
         osc7.moveDistance = 2.6f;
         osc7.moveSpeed = 1.6f;
 
         // Hazard 2: Propeller above moving elevator
-        GameObject hazard2 = CreateHazardBar("Hazard_Propeller2", root.transform, new Vector3(0f, 13.8f, 63f), new Vector3(8.5f, 0.45f, 0.45f), matLava);
+        GameObject hazard2 = CreateHazardBar("Hazard_Propeller2", courseHard.transform, new Vector3(0f, 13.8f, 63f), new Vector3(8.5f, 0.45f, 0.45f), matLava);
         var osc2 = hazard2.AddComponent<Oscillator>();
         osc2.rotationSpeed = new Vector3(0, 110f, 0);
 
-        CreateRockPlatform("Platform_8", root.transform, new Vector3(-2.8f, 13.0f, 71f), new Vector3(2.8f, 0.9f, 2.8f), matRock, 110);
+        CreateRockPlatform("Platform_8", courseHard.transform, new Vector3(-2.8f, 13.0f, 71f), new Vector3(2.8f, 0.9f, 2.8f), matRock, 110);
 
-        // 17. Checkpoint 2 (Rock Sanctuary at Z = 80)
-        CreateRockPlatform("Checkpoint2_Platform", root.transform, new Vector3(0, 14.5f, 80f), new Vector3(6.5f, 1.4f, 6.5f), matRock, 111);
-        CreateCheckpoint("Checkpoint_2", root.transform, new Vector3(0, 15.3f, 80f), matCpInactive, matCpActive, chimeClip);
+        // Checkpoint 2 (Rock Sanctuary at Z = 80)
+        CreateRockPlatform("Checkpoint2_Platform", courseHard.transform, new Vector3(0, 14.5f, 80f), new Vector3(6.5f, 1.4f, 6.5f), matRock, 111);
+        CreateCheckpoint("Checkpoint_2", courseHard.transform, new Vector3(0, 15.3f, 80f), matCpInactive, matCpActive, chimeClip);
 
-        // 18. Stage 3: The Sky Dash (Narrow high-altitude rock steps)
-        CreateRockPlatform("Platform_9", root.transform, new Vector3(2.6f, 16.2f, 88f), new Vector3(2.4f, 0.8f, 2.4f), matRock, 112);
-        CreateRockPlatform("Platform_10", root.transform, new Vector3(-2.4f, 17.8f, 95f), new Vector3(2.4f, 0.8f, 2.4f), matRock, 113);
+        // Stage 3: The Sky Dash (Narrow high-altitude rock steps)
+        CreateRockPlatform("Platform_9", courseHard.transform, new Vector3(2.6f, 16.2f, 88f), new Vector3(2.4f, 0.8f, 2.4f), matRock, 112);
+        CreateRockPlatform("Platform_10", courseHard.transform, new Vector3(-2.4f, 17.8f, 95f), new Vector3(2.4f, 0.8f, 2.4f), matRock, 113);
 
-        GameObject plat11 = CreateRockPlatform("Platform_11_MovingFast", root.transform, new Vector3(0f, 19.5f, 102f), new Vector3(2.8f, 0.8f, 2.8f), matLava, 114, isStatic: false);
+        GameObject plat11 = CreateRockPlatform("Platform_11_MovingFast", courseHard.transform, new Vector3(0f, 19.5f, 102f), new Vector3(2.8f, 0.8f, 2.8f), matLava, 114, isStatic: false);
         var osc11 = plat11.AddComponent<Oscillator>();
         osc11.moveDirection = Vector3.right;
         osc11.moveDistance = 3.4f;
         osc11.moveSpeed = 2.6f;
 
-        CreateRockPlatform("Platform_12", root.transform, new Vector3(2.0f, 21.2f, 110f), new Vector3(2.2f, 0.8f, 2.2f), matRock, 115);
-        CreateRockPlatform("Platform_13", root.transform, new Vector3(0f, 22.8f, 118f), new Vector3(2.6f, 0.8f, 2.6f), matRock, 116);
+        CreateRockPlatform("Platform_12", courseHard.transform, new Vector3(2.0f, 21.2f, 110f), new Vector3(2.2f, 0.8f, 2.2f), matRock, 115);
+        CreateRockPlatform("Platform_13", courseHard.transform, new Vector3(0f, 22.8f, 118f), new Vector3(2.6f, 0.8f, 2.6f), matRock, 116);
 
-        // 19. Finish Sanctuary (Grand Volcanic Rock Altar at Z = 129)
-        CreateRockPlatform("FinishPlatform_Rock", root.transform, new Vector3(0, 24.2f, 129f), new Vector3(11f, 1.8f, 11f), matRock, 117);
-        SetupVolcanicFinishArch(root.transform, new Vector3(0, 25.2f, 129f), matRock, matLava, winClip);
+        // Hard Finish Sanctuary (Grand Volcanic Rock Altar at Z = 129)
+        CreateRockPlatform("FinishPlatform_Rock", courseHard.transform, new Vector3(0, 24.2f, 129f), new Vector3(11f, 1.8f, 11f), matRock, 117);
+        SetupVolcanicFinishArch(courseHard.transform, new Vector3(0, 25.2f, 129f), matRock, matLava, winClip);
 
-        // 20. UI Canvas & EventSystem
-        SetupGameUI(root.transform);
+        // --- EASY COURSE (Exactly 2 Jumps, Broad Platforms, No Checkpoints, No Hazards) ---
+        // Jump 1: Broad stable rock platform
+        CreateRockPlatform("Easy_Platform_1", courseEasy.transform, new Vector3(0f, 0.4f, 8.5f), new Vector3(5.2f, 1.1f, 5.2f), matRock, 501);
+        // Jump 2: Broad stable rock platform
+        CreateRockPlatform("Easy_Platform_2", courseEasy.transform, new Vector3(0f, 0.9f, 17.0f), new Vector3(5.2f, 1.1f, 5.2f), matRock, 502);
+        // Easy Finish Sanctuary Altar (Z = 25.5)
+        CreateRockPlatform("Easy_FinishPlatform", courseEasy.transform, new Vector3(0f, 1.4f, 25.5f), new Vector3(8.5f, 1.4f, 8.5f), matRock, 503);
+        SetupVolcanicFinishArch(courseEasy.transform, new Vector3(0f, 2.4f, 25.5f), matRock, matLava, winClip);
+
+        // Both courses ready; Difficulty Menu controls visibility
+        courseEasy.SetActive(false);
+        courseHard.SetActive(false);
+
+        // 20. UI Canvas, Difficulty Selection Menu & EventSystem
+        SetupGameUI(root.transform, courseEasy, courseHard);
 
         // 21. Tag registration & scene in build settings
         RegisterPlayerTag();
@@ -185,7 +214,14 @@ public class SkyParkourBuilder : EditorWindow
 
         Undo.CollapseUndoOperations(undoGroup);
         EditorSceneManager.MarkSceneDirty(activeScene);
-        EditorSceneManager.SaveScene(activeScene);
+        if (!string.IsNullOrEmpty(activeScene.path))
+        {
+            EditorSceneManager.SaveScene(activeScene, activeScene.path);
+        }
+        else
+        {
+            EditorSceneManager.SaveScene(activeScene, targetScenePath);
+        }
 
         // Focus Scene View on Course
         if (SceneView.lastActiveSceneView != null)
@@ -193,17 +229,20 @@ public class SkyParkourBuilder : EditorWindow
             SceneView.lastActiveSceneView.Frame(new Bounds(new Vector3(0, 10, 45), new Vector3(35, 30, 80)), false);
         }
 
-        Debug.Log("<b>[Sky Parkour]</b> Dark Volcanic Storm Canyon generated successfully! Press <b>Play</b> to test.");
-        EditorUtility.DisplayDialog("Volcanic Storm Canyon Generated!",
-            "The volcanic canyon course now has a dark, ominous storm sky matching an erupting volcano!\n\n" +
-            "• Dark Procedural Skybox (Exposure 0.38, Atmosphere Thickness 2.0, no blue/white tones)\n" +
-            "• Overhead Dark Storm Cloud Canopy with turbulent UV scrolling\n" +
-            "• Matching Blood-Orange Horizon Fog (Density 0.019)\n" +
-            "• Low-Angle Deep Red-Orange Rim Sun & Subdued Ambient Light\n" +
-            "• ACES Tonemapping, Raised Bloom Threshold (1.15), -0.35 EV, Dark Red Vignette\n" +
-            "• Dark Red-Black Camera Background Fallback\n" +
-            "• Blazing Lava Rivers, Glowing Rock Platforms & Emerald Checkpoints\n\n" +
-            "Press Play (▶) at the top to test your run!", "Awesome!");
+        if (showDialog)
+        {
+            EditorUtility.DisplayDialog("Volcanic Storm Canyon Generated!",
+                "The volcanic canyon course now has a dark, ominous storm sky matching an erupting volcano!\n\n" +
+                "• Dark Procedural Skybox (Exposure 0.38, Atmosphere Thickness 2.0, no blue/white tones)\n" +
+                "• Overhead Dark Storm Cloud Canopy with turbulent UV scrolling\n" +
+                "• Matching Blood-Orange Horizon Fog (Density 0.019)\n" +
+                "• Low-Angle Deep Red-Orange Rim Sun & Subdued Ambient Light\n" +
+                "• ACES Tonemapping, Raised Bloom Threshold (1.15), -0.35 EV, Dark Red Vignette\n" +
+                "• Dark Red-Black Camera Background Fallback\n" +
+                "• Easy Level (2 Jumps) & Hard Level (3 Stages) with Difficulty Selection Screen\n" +
+                "• Blazing Lava Rivers, Glowing Rock Platforms & Emerald Checkpoints\n\n" +
+                "Press Play (▶) at the top to test your run!", "Awesome!");
+        }
     }
 
     private static (Material rock, Material lava, Material fissure, Material spire, Material cpInactive, Material cpActive, Material skybox, Material clouds, Material ember, Material smoke) GetOrCreateVolcanicMaterials()
@@ -1292,7 +1331,7 @@ public class SkyParkourBuilder : EditorWindow
         return player;
     }
 
-    private static void SetupGameUI(Transform root)
+    private static void SetupGameUI(Transform root, GameObject courseEasy = null, GameObject courseHard = null)
     {
         Canvas canvas = Object.FindAnyObjectByType<Canvas>();
         if (canvas == null)
@@ -1341,7 +1380,41 @@ public class SkyParkourBuilder : EditorWindow
             DestroyImmediate(canvas.transform.GetChild(i).gameObject);
         }
 
-        // HUD Root
+        // 1. Difficulty Selection Panel (Shown First Before Playing)
+        GameObject diffPanel = new GameObject("DifficultySelectionPanel");
+        diffPanel.transform.SetParent(canvas.transform, false);
+        var diffRect = diffPanel.AddComponent<RectTransform>();
+        diffRect.anchorMin = Vector2.zero;
+        diffRect.anchorMax = Vector2.one;
+        diffRect.sizeDelta = Vector2.zero;
+        var diffBg = diffPanel.AddComponent<Image>();
+        diffBg.color = new Color(0.04f, 0.02f, 0.02f, 0.96f);
+
+        // Title
+        GameObject menuTitle = new GameObject("Title");
+        menuTitle.transform.SetParent(diffPanel.transform, false);
+        var menuTitleRect = menuTitle.AddComponent<RectTransform>();
+        menuTitleRect.anchoredPosition = new Vector2(0, 180);
+        menuTitleRect.sizeDelta = new Vector2(700, 80);
+        var menuTitleTmp = menuTitle.AddComponent<TextMeshProUGUI>();
+        menuTitleTmp.text = "🌋 SKY PARKOUR";
+        menuTitleTmp.fontSize = 58;
+        menuTitleTmp.fontStyle = FontStyles.Bold;
+        menuTitleTmp.alignment = TextAlignmentOptions.Center;
+        menuTitleTmp.color = new Color(1.0f, 0.65f, 0.15f);
+
+        GameObject menuSub = new GameObject("Subtitle");
+        menuSub.transform.SetParent(diffPanel.transform, false);
+        var menuSubRect = menuSub.AddComponent<RectTransform>();
+        menuSubRect.anchoredPosition = new Vector2(0, 120);
+        menuSubRect.sizeDelta = new Vector2(600, 40);
+        var menuSubTmp = menuSub.AddComponent<TextMeshProUGUI>();
+        menuSubTmp.text = "SELECT DIFFICULTY TO PLAY";
+        menuSubTmp.fontSize = 24;
+        menuSubTmp.alignment = TextAlignmentOptions.Center;
+        menuSubTmp.color = new Color(0.85f, 0.85f, 0.9f);
+
+        // 2. HUD Root
         GameObject hud = new GameObject("HUD");
         hud.transform.SetParent(canvas.transform, false);
         var hudRect = hud.AddComponent<RectTransform>();
@@ -1372,10 +1445,10 @@ public class SkyParkourBuilder : EditorWindow
         cpRect.anchorMax = new Vector2(1, 1);
         cpRect.pivot = new Vector2(1, 1);
         cpRect.anchoredPosition = new Vector2(-35, -30);
-        cpRect.sizeDelta = new Vector2(350, 60);
+        cpRect.sizeDelta = new Vector2(400, 60);
         var cpTmp = cpObj.AddComponent<TextMeshProUGUI>();
         cpTmp.text = "Checkpoints: 0 / 2";
-        cpTmp.fontSize = 32;
+        cpTmp.fontSize = 30;
         cpTmp.fontStyle = FontStyles.Bold;
         cpTmp.alignment = TextAlignmentOptions.TopRight;
         cpTmp.color = new Color(1.0f, 0.55f, 0.15f);
@@ -1389,7 +1462,7 @@ public class SkyParkourBuilder : EditorWindow
         crossImg.color = new Color(1, 1, 1, 0.75f);
         crossImg.raycastTarget = false;
 
-        // Victory Panel (Centered)
+        // 3. Victory Panel (Centered)
         GameObject winPanel = new GameObject("VictoryPanel");
         winPanel.transform.SetParent(canvas.transform, false);
         var winRect = winPanel.AddComponent<RectTransform>();
@@ -1400,7 +1473,6 @@ public class SkyParkourBuilder : EditorWindow
         winBg.color = new Color(0.08f, 0.02f, 0.02f, 0.94f);
         winBg.raycastTarget = true;
 
-        // Title
         GameObject winTitle = new GameObject("Title");
         winTitle.transform.SetParent(winPanel.transform, false);
         var titleRect = winTitle.AddComponent<RectTransform>();
@@ -1414,56 +1486,31 @@ public class SkyParkourBuilder : EditorWindow
         titleTmp.color = new Color(1.0f, 0.65f, 0.1f);
         titleTmp.raycastTarget = false;
 
-        // Final Time Text
         GameObject finalTimeObj = new GameObject("FinalTimeText");
         finalTimeObj.transform.SetParent(winPanel.transform, false);
         var finalRect = finalTimeObj.AddComponent<RectTransform>();
         finalRect.anchoredPosition = new Vector2(0, 10);
-        finalRect.sizeDelta = new Vector2(500, 50);
+        finalRect.sizeDelta = new Vector2(600, 60);
         var finalTmp = finalTimeObj.AddComponent<TextMeshProUGUI>();
         finalTmp.text = "Completed in: 00:00";
-        finalTmp.fontSize = 32;
+        finalTmp.fontSize = 30;
         finalTmp.alignment = TextAlignmentOptions.Center;
         finalTmp.color = Color.white;
         finalTmp.raycastTarget = false;
-
-        // Restart Button
-        GameObject btnObj = new GameObject("RestartButton");
-        btnObj.transform.SetParent(winPanel.transform, false);
-        var btnRect = btnObj.AddComponent<RectTransform>();
-        btnRect.anchoredPosition = new Vector2(0, -90);
-        btnRect.sizeDelta = new Vector2(250, 60);
-        var btnImg = btnObj.AddComponent<Image>();
-        btnImg.color = new Color(0.95f, 0.40f, 0.10f);
-        btnImg.raycastTarget = true;
-        var btn = btnObj.AddComponent<Button>();
-        btn.targetGraphic = btnImg;
-
-        GameObject btnTxt = new GameObject("Text");
-        btnTxt.transform.SetParent(btnObj.transform, false);
-        var btnTxtRect = btnTxt.AddComponent<RectTransform>();
-        btnTxtRect.anchorMin = Vector2.zero;
-        btnTxtRect.anchorMax = Vector2.one;
-        btnTxtRect.sizeDelta = Vector2.zero;
-        var btnTmp = btnTxt.AddComponent<TextMeshProUGUI>();
-        btnTmp.text = "PLAY AGAIN (or [R])";
-        btnTmp.fontSize = 22;
-        btnTmp.fontStyle = FontStyles.Bold;
-        btnTmp.alignment = TextAlignmentOptions.Center;
-        btnTmp.color = Color.white;
-        btnTmp.raycastTarget = false;
 
         var gameUI = canvas.GetComponent<GameUI>();
         if (gameUI == null) gameUI = canvas.gameObject.AddComponent<GameUI>();
 
         var soUI = new SerializedObject(gameUI);
+        soUI.FindProperty("courseEasy").objectReferenceValue = courseEasy;
+        soUI.FindProperty("courseHard").objectReferenceValue = courseHard;
+        soUI.FindProperty("difficultyPanel").objectReferenceValue = diffPanel;
+        soUI.FindProperty("hudPanel").objectReferenceValue = hud;
         soUI.FindProperty("timerText").objectReferenceValue = timerTmp;
         soUI.FindProperty("checkpointText").objectReferenceValue = cpTmp;
         soUI.FindProperty("winPanel").objectReferenceValue = winPanel;
         soUI.FindProperty("finalTimeText").objectReferenceValue = finalTmp;
         soUI.ApplyModifiedProperties();
-
-        UnityEditor.Events.UnityEventTools.AddPersistentListener(btn.onClick, gameUI.RestartGame);
 
         winPanel.SetActive(false);
     }
