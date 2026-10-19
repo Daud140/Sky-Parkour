@@ -14,8 +14,8 @@ public class FinishLine : MonoBehaviour
     {
         if (isFinished || !other.CompareTag("Player")) return;
 
-        // In Hard mode, require 2 checkpoints before allowing completion. In Easy mode, no checkpoints are required.
-        if (GameUI.Instance != null && GameUI.Instance.RequiresCheckpoints && GameUI.Instance.ClaimedCheckpoints < 2)
+        // In Hard mode (2 checkpoints), Medium mode (1 checkpoint), Easy mode (0 checkpoints)
+        if (GameUI.Instance != null && GameUI.Instance.ClaimedCheckpoints < GameUI.Instance.TargetCheckpoints)
         {
             return;
         }

@@ -10,6 +10,7 @@ public enum Difficulty
 {
     None,
     Easy,
+    Medium,
     Hard
 }
 
@@ -19,6 +20,7 @@ public class GameUI : MonoBehaviour
 
     [Header("Level Containers")]
     [SerializeField] private GameObject courseEasy;
+    [SerializeField] private GameObject courseMedium;
     [SerializeField] private GameObject courseHard;
 
     [Header("HUD Elements")]
@@ -48,7 +50,13 @@ public class GameUI : MonoBehaviour
     public Difficulty CurrentDifficulty => currentDifficulty;
     public bool IsSelectingDifficulty => isSelectingDifficulty;
     public bool IsRunning => isRunning;
-    public bool RequiresCheckpoints => currentDifficulty == Difficulty.Hard;
+    public int TargetCheckpoints => currentDifficulty switch
+    {
+        Difficulty.Medium => 1,
+        Difficulty.Hard => 2,
+        _ => 0
+    };
+    public bool RequiresCheckpoints => TargetCheckpoints > 0;
     public int ClaimedCheckpoints => claimedCheckpoints;
 
     private void Awake()
@@ -137,6 +145,7 @@ public class GameUI : MonoBehaviour
         claimedCheckpoints = 0;
 
         if (courseEasy != null) courseEasy.SetActive(difficulty == Difficulty.Easy);
+        if (courseMedium != null) courseMedium.SetActive(difficulty == Difficulty.Medium);
         if (courseHard != null) courseHard.SetActive(difficulty == Difficulty.Hard);
 
         if (difficultyPanel != null) difficultyPanel.SetActive(false);
@@ -146,6 +155,11 @@ public class GameUI : MonoBehaviour
         {
             if (checkpointText != null) checkpointText.text = "Difficulty: EASY (2 Jumps • No Checkpoints)";
             if (modeBadgeText != null) modeBadgeText.text = "<color=#00e676>EASY MODE</color>";
+        }
+        else if (difficulty == Difficulty.Medium)
+        {
+            if (checkpointText != null) checkpointText.text = "Checkpoints: 0 / 1";
+            if (modeBadgeText != null) modeBadgeText.text = "<color=#ffd600>MEDIUM MODE</color>";
         }
         else
         {
@@ -211,7 +225,12 @@ public class GameUI : MonoBehaviour
                     SelectDifficulty(Difficulty.Easy);
                     return;
                 }
-                if (Keyboard.current.digit2Key.wasPressedThisFrame || Keyboard.current.numpad2Key.wasPressedThisFrame || Keyboard.current.hKey.wasPressedThisFrame)
+                if (Keyboard.current.digit2Key.wasPressedThisFrame || Keyboard.current.numpad2Key.wasPressedThisFrame)
+                {
+                    SelectDifficulty(Difficulty.Medium);
+                    return;
+                }
+                if (Keyboard.current.digit3Key.wasPressedThisFrame || Keyboard.current.numpad3Key.wasPressedThisFrame || Keyboard.current.hKey.wasPressedThisFrame)
                 {
                     SelectDifficulty(Difficulty.Hard);
                     return;
@@ -223,7 +242,12 @@ public class GameUI : MonoBehaviour
                 SelectDifficulty(Difficulty.Easy);
                 return;
             }
-            if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2) || Input.GetKeyDown(KeyCode.H))
+            if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.Keypad2))
+            {
+                SelectDifficulty(Difficulty.Medium);
+                return;
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.Keypad3) || Input.GetKeyDown(KeyCode.H))
             {
                 SelectDifficulty(Difficulty.Hard);
                 return;
@@ -289,12 +313,12 @@ public class GameUI : MonoBehaviour
 
     public void RegisterCheckpoint()
     {
-        if (currentDifficulty != Difficulty.Hard) return;
+        if (currentDifficulty == Difficulty.Easy) return;
 
         claimedCheckpoints++;
         if (checkpointText != null)
         {
-            checkpointText.text = $"Checkpoints: {claimedCheckpoints} / 2";
+            checkpointText.text = $"Checkpoints: {claimedCheckpoints} / {TargetCheckpoints}";
         }
     }
 
@@ -303,7 +327,12 @@ public class GameUI : MonoBehaviour
         isRunning = false;
         if (winPanel != null) winPanel.SetActive(true);
 
-        string modeLabel = (currentDifficulty == Difficulty.Easy) ? "<color=#00e676>[EASY MODE]</color>" : "<color=#ff5722>[HARD MODE]</color>";
+        string modeLabel = currentDifficulty switch
+        {
+            Difficulty.Easy => "<color=#00e676>[EASY MODE]</color>",
+            Difficulty.Medium => "<color=#ffd600>[MEDIUM MODE]</color>",
+            _ => "<color=#ff5722>[HARD MODE]</color>"
+        };
         if (finalTimeText != null && timerText != null)
         {
             finalTimeText.text = $"{modeLabel}\nCompleted in: {timerText.text.Replace("Time: ", "")}\n<size=18><color=#99c2ff>Press [R] to Play Again  •  Press [M] to Change Level</color></size>";
@@ -342,8 +371,8 @@ public class GameUI : MonoBehaviour
             // Dark vignette backdrop
             GUI.Box(new Rect(0, 0, Screen.width, Screen.height), GUIContent.none);
 
-            float panelWidth = Mathf.Min(680f, Screen.width - 40f);
-            float panelHeight = 460f;
+            float panelWidth = Mathf.Min(880f, Screen.width - 30f);
+            float panelHeight = 470f;
             float px = (Screen.width - panelWidth) / 2f;
             float py = (Screen.height - panelHeight) / 2f;
 
@@ -360,99 +389,131 @@ public class GameUI : MonoBehaviour
                 alignment = TextAnchor.MiddleCenter
             };
             titleStyle.normal.textColor = new Color(1.0f, 0.65f, 0.2f);
-            GUI.Label(new Rect(px, py + 22, panelWidth, 42), "🌋 SKY PARKOUR", titleStyle);
+            GUI.Label(new Rect(px, py + 20, panelWidth, 40), "🌋 SKY PARKOUR", titleStyle);
 
             GUIStyle subtitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 17,
+                fontSize = 16,
                 fontStyle = FontStyle.Normal,
                 alignment = TextAnchor.MiddleCenter
             };
             subtitleStyle.normal.textColor = new Color(0.85f, 0.85f, 0.9f);
-            GUI.Label(new Rect(px, py + 68, panelWidth, 28), "CHOOSE YOUR DIFFICULTY TO START", subtitleStyle);
+            GUI.Label(new Rect(px, py + 62, panelWidth, 26), "CHOOSE YOUR DIFFICULTY TO START", subtitleStyle);
 
-            // Two Cards: Left = Easy, Right = Hard
-            float cardWidth = (panelWidth - 60f) / 2f;
-            float cardHeight = 270f;
-            float cardY = py + 115f;
+            // Three Cards: Easy, Medium, Hard
+            float cardMargin = 15f;
+            float totalCardMargins = cardMargin * 4f;
+            float cardWidth = (panelWidth - totalCardMargins) / 3f;
+            float cardHeight = 280f;
+            float cardY = py + 105f;
 
-            // --- EASY CARD ---
-            float easyX = px + 20f;
-            GUI.backgroundColor = new Color(0.05f, 0.25f, 0.15f, 0.85f);
+            // --- 1. EASY CARD ---
+            float easyX = px + cardMargin;
+            GUI.backgroundColor = new Color(0.05f, 0.25f, 0.15f, 0.88f);
             GUI.Box(new Rect(easyX, cardY, cardWidth, cardHeight), GUIContent.none);
             GUI.backgroundColor = Color.white;
 
-            GUIStyle cardHeader = new GUIStyle(GUI.skin.label)
+            GUIStyle cardHeaderEasy = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 22,
+                fontSize = 20,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter
             };
-            cardHeader.normal.textColor = new Color(0.2f, 1.0f, 0.5f);
-            GUI.Label(new Rect(easyX, cardY + 15, cardWidth, 32), "🟢 EASY LEVEL", cardHeader);
+            cardHeaderEasy.normal.textColor = new Color(0.2f, 1.0f, 0.5f);
+            GUI.Label(new Rect(easyX, cardY + 12, cardWidth, 30), "🟢 EASY LEVEL", cardHeaderEasy);
 
             GUIStyle cardBody = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 14,
+                fontSize = 13,
                 wordWrap = true,
                 alignment = TextAnchor.UpperCenter
             };
             cardBody.normal.textColor = new Color(0.9f, 0.95f, 0.9f);
-            GUI.Label(new Rect(easyX + 15, cardY + 55, cardWidth - 30, 110),
+            GUI.Label(new Rect(easyX + 10, cardY + 50, cardWidth - 20, 130),
                 "• Beginner friendly\n" +
                 "• Exactly 2 simple jumps\n" +
                 "• No checkpoints needed\n" +
-                "• Pure speedrun practice", cardBody);
+                "• Instant finish altar\n" +
+                "• Speedrun practice", cardBody);
 
             GUIStyle btnEasyStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 18,
+                fontSize = 16,
                 fontStyle = FontStyle.Bold
             };
             btnEasyStyle.normal.textColor = Color.white;
             GUI.backgroundColor = new Color(0.1f, 0.75f, 0.35f);
-            if (GUI.Button(new Rect(easyX + 15, cardY + 195, cardWidth - 30, 55), "PLAY EASY  [1 / E]", btnEasyStyle))
+            if (GUI.Button(new Rect(easyX + 10, cardY + 205, cardWidth - 20, 52), "PLAY EASY  [1 / E]", btnEasyStyle))
             {
                 SelectDifficulty(Difficulty.Easy);
             }
             GUI.backgroundColor = Color.white;
 
-            // --- HARD CARD ---
-            float hardX = px + 40f + cardWidth;
-            GUI.backgroundColor = new Color(0.3f, 0.10f, 0.05f, 0.85f);
+            // --- 2. MEDIUM CARD ---
+            float medX = easyX + cardWidth + cardMargin;
+            GUI.backgroundColor = new Color(0.28f, 0.22f, 0.05f, 0.88f);
+            GUI.Box(new Rect(medX, cardY, cardWidth, cardHeight), GUIContent.none);
+            GUI.backgroundColor = Color.white;
+
+            GUIStyle cardHeaderMed = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 20,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter
+            };
+            cardHeaderMed.normal.textColor = new Color(1.0f, 0.82f, 0.2f);
+            GUI.Label(new Rect(medX, cardY + 12, cardWidth, 30), "⚡ MEDIUM LEVEL", cardHeaderMed);
+
+            GUI.Label(new Rect(medX + 10, cardY + 50, cardWidth - 20, 130),
+                "• Balanced progression\n" +
+                "• 2 easy jumps to start\n" +
+                "• 1 sanctuary checkpoint\n" +
+                "• 2 hard elevated jumps\n" +
+                "• Finish altar gate", cardBody);
+
+            GUIStyle btnMedStyle = new GUIStyle(GUI.skin.button)
+            {
+                fontSize = 16,
+                fontStyle = FontStyle.Bold
+            };
+            btnMedStyle.normal.textColor = Color.white;
+            GUI.backgroundColor = new Color(0.92f, 0.65f, 0.08f);
+            if (GUI.Button(new Rect(medX + 10, cardY + 205, cardWidth - 20, 52), "PLAY MEDIUM  [2]", btnMedStyle))
+            {
+                SelectDifficulty(Difficulty.Medium);
+            }
+            GUI.backgroundColor = Color.white;
+
+            // --- 3. HARD CARD ---
+            float hardX = medX + cardWidth + cardMargin;
+            GUI.backgroundColor = new Color(0.3f, 0.10f, 0.05f, 0.88f);
             GUI.Box(new Rect(hardX, cardY, cardWidth, cardHeight), GUIContent.none);
             GUI.backgroundColor = Color.white;
 
             GUIStyle hardHeader = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 22,
+                fontSize = 20,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter
             };
             hardHeader.normal.textColor = new Color(1.0f, 0.45f, 0.15f);
-            GUI.Label(new Rect(hardX, cardY + 15, cardWidth, 32), "🔥 HARD LEVEL", hardHeader);
+            GUI.Label(new Rect(hardX, cardY + 12, cardWidth, 30), "🔥 HARD LEVEL", hardHeader);
 
-            GUIStyle hardBody = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = 14,
-                wordWrap = true,
-                alignment = TextAnchor.UpperCenter
-            };
-            hardBody.normal.textColor = new Color(0.95f, 0.9f, 0.85f);
-            GUI.Label(new Rect(hardX + 15, cardY + 55, cardWidth - 30, 110),
-                "• Full Volcanic Storm Canyon\n" +
+            GUI.Label(new Rect(hardX + 10, cardY + 50, cardWidth - 20, 130),
+                "• Volcanic Canyon Chasm\n" +
                 "• 3 challenging stages\n" +
-                "• Moving hazards & propellers\n" +
-                "• 2 intermediate checkpoints", hardBody);
+                "• Moving magma slabs\n" +
+                "• Hazard propeller beams\n" +
+                "• 2 intermediate checkpoints", cardBody);
 
             GUIStyle btnHardStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 18,
+                fontSize = 16,
                 fontStyle = FontStyle.Bold
             };
             btnHardStyle.normal.textColor = Color.white;
             GUI.backgroundColor = new Color(0.95f, 0.32f, 0.08f);
-            if (GUI.Button(new Rect(hardX + 15, cardY + 195, cardWidth - 30, 55), "PLAY HARD  [2 / H]", btnHardStyle))
+            if (GUI.Button(new Rect(hardX + 10, cardY + 205, cardWidth - 20, 52), "PLAY HARD  [3 / H]", btnHardStyle))
             {
                 SelectDifficulty(Difficulty.Hard);
             }
@@ -465,7 +526,7 @@ public class GameUI : MonoBehaviour
                 alignment = TextAnchor.MiddleCenter
             };
             footerStyle.normal.textColor = new Color(0.6f, 0.6f, 0.7f);
-            GUI.Label(new Rect(px, py + panelHeight - 34, panelWidth, 24), "Press [1] or [E] for Easy  |  Press [2] or [H] for Hard", footerStyle);
+            GUI.Label(new Rect(px, py + panelHeight - 32, panelWidth, 24), "Press [1] or [E] for Easy  |  Press [2] for Medium  |  Press [3] or [H] for Hard", footerStyle);
         }
         else if (!isRunning)
         {

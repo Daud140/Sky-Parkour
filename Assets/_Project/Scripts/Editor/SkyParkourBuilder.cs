@@ -126,9 +126,12 @@ public class SkyParkourBuilder : EditorWindow
         // 13. Setup Player & Camera (Camera background set to dark red-black fallback, death sound assigned)
         GameObject player = SetupPlayer(root.transform, startCheckpointObj.transform, deathClip);
 
-        // 14. Course Containers: Easy Mode (2 Jumps, No Checkpoints) & Hard Mode (Full Volcanic Chasm)
+        // 14. Course Containers: Easy Mode, Medium Mode & Hard Mode
         GameObject courseHard = new GameObject("Course_Hard");
         courseHard.transform.parent = root.transform;
+
+        GameObject courseMedium = new GameObject("Course_Medium");
+        courseMedium.transform.parent = root.transform;
 
         GameObject courseEasy = new GameObject("Course_Easy");
         courseEasy.transform.parent = root.transform;
@@ -192,6 +195,26 @@ public class SkyParkourBuilder : EditorWindow
         CreateRockPlatform("FinishPlatform_Rock", courseHard.transform, new Vector3(0, 24.2f, 129f), new Vector3(11f, 1.8f, 11f), matRock, 117);
         SetupVolcanicFinishArch(courseHard.transform, new Vector3(0, 25.2f, 129f), matRock, matLava, winClip);
 
+        // --- MEDIUM COURSE (2 Easy Jumps, 1 Checkpoint, 2 Hard Jumps, Finish Altar) ---
+        // Jump 1 (Easy): Broad stable rock platform
+        CreateRockPlatform("Med_Platform_1_Easy", courseMedium.transform, new Vector3(0f, 0.6f, 8.5f), new Vector3(4.8f, 1.1f, 4.8f), matRock, 601);
+        // Jump 2 (Easy): Broad stable rock platform with slight elevation
+        CreateRockPlatform("Med_Platform_2_Easy", courseMedium.transform, new Vector3(1.6f, 1.4f, 17.5f), new Vector3(4.4f, 1.1f, 4.4f), matRock, 602);
+        // Checkpoint Sanctuary (Z = 26.5): Safe haven platform with single Checkpoint trigger
+        CreateRockPlatform("Med_CheckpointPlatform", courseMedium.transform, new Vector3(0f, 2.4f, 26.5f), new Vector3(6.5f, 1.3f, 6.5f), matRock, 603);
+        CreateCheckpoint("Checkpoint_Medium", courseMedium.transform, new Vector3(0f, 3.2f, 26.5f), matCpInactive, matCpActive, chimeClip);
+        // Jump 3 (Hard Jump 1 after Checkpoint): Moving magma slab with precision gap
+        GameObject medPlat3 = CreateRockPlatform("Med_Platform_3_HardMoving", courseMedium.transform, new Vector3(-2.6f, 4.2f, 36.0f), new Vector3(2.8f, 0.9f, 2.8f), matLava, 604, isStatic: false);
+        var oscMed = medPlat3.AddComponent<Oscillator>();
+        oscMed.moveDirection = Vector3.right;
+        oscMed.moveDistance = 2.4f;
+        oscMed.moveSpeed = 1.6f;
+        // Jump 4 (Hard Jump 2 after Checkpoint): Narrow elevated rock stepping stone
+        CreateRockPlatform("Med_Platform_4_Hard", courseMedium.transform, new Vector3(2.4f, 6.0f, 45.0f), new Vector3(2.4f, 0.9f, 2.4f), matRock, 605);
+        // Medium Finish Sanctuary Altar (Z = 54.0)
+        CreateRockPlatform("Med_FinishPlatform", courseMedium.transform, new Vector3(0f, 7.5f, 54.0f), new Vector3(9.5f, 1.5f, 9.5f), matRock, 606);
+        SetupVolcanicFinishArch(courseMedium.transform, new Vector3(0f, 8.5f, 54.0f), matRock, matLava, winClip);
+
         // --- EASY COURSE (Exactly 2 Jumps, Broad Platforms, No Checkpoints, No Hazards) ---
         // Jump 1: Broad stable rock platform
         CreateRockPlatform("Easy_Platform_1", courseEasy.transform, new Vector3(0f, 0.4f, 8.5f), new Vector3(5.2f, 1.1f, 5.2f), matRock, 501);
@@ -201,12 +224,13 @@ public class SkyParkourBuilder : EditorWindow
         CreateRockPlatform("Easy_FinishPlatform", courseEasy.transform, new Vector3(0f, 1.4f, 25.5f), new Vector3(8.5f, 1.4f, 8.5f), matRock, 503);
         SetupVolcanicFinishArch(courseEasy.transform, new Vector3(0f, 2.4f, 25.5f), matRock, matLava, winClip);
 
-        // Both courses ready; Difficulty Menu controls visibility
+        // All courses ready; Difficulty Menu controls visibility
         courseEasy.SetActive(false);
+        courseMedium.SetActive(false);
         courseHard.SetActive(false);
 
         // 20. UI Canvas, Difficulty Selection Menu & EventSystem
-        SetupGameUI(root.transform, courseEasy, courseHard);
+        SetupGameUI(root.transform, courseEasy, courseMedium, courseHard);
 
         // 21. Tag registration & scene in build settings
         RegisterPlayerTag();
@@ -1331,7 +1355,7 @@ public class SkyParkourBuilder : EditorWindow
         return player;
     }
 
-    private static void SetupGameUI(Transform root, GameObject courseEasy = null, GameObject courseHard = null)
+    private static void SetupGameUI(Transform root, GameObject courseEasy = null, GameObject courseMedium = null, GameObject courseHard = null)
     {
         Canvas canvas = Object.FindAnyObjectByType<Canvas>();
         if (canvas == null)
@@ -1503,6 +1527,7 @@ public class SkyParkourBuilder : EditorWindow
 
         var soUI = new SerializedObject(gameUI);
         soUI.FindProperty("courseEasy").objectReferenceValue = courseEasy;
+        soUI.FindProperty("courseMedium").objectReferenceValue = courseMedium;
         soUI.FindProperty("courseHard").objectReferenceValue = courseHard;
         soUI.FindProperty("difficultyPanel").objectReferenceValue = diffPanel;
         soUI.FindProperty("hudPanel").objectReferenceValue = hud;
