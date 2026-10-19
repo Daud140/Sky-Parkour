@@ -10,9 +10,10 @@ public class PlayerRespawn : MonoBehaviour
     [SerializeField] private AudioClip deathSound;
     [Range(0f, 1f)] [SerializeField] private float deathVolume = 0.85f;
 
-    [Header("Death Timing & Settings")]
-    [SerializeField] private float fallThreshold = -3.5f;
-    [SerializeField] private float deathDelay = 0.6f;
+    [Header("Death & Lava Timing Settings")]
+    [Tooltip("Y elevation of the molten lava sea floor where the player impacts the lava surface")]
+    [SerializeField] private float lavaSeaLevel = -10.5f;
+    [SerializeField] private float deathDelay = 0.65f;
 
     private CharacterController controller;
     private PlayerMovement movement;
@@ -50,8 +51,24 @@ public class PlayerRespawn : MonoBehaviour
         // Don't trigger fall death if already dying or if not running (e.g. in difficulty menu or victory screen)
         if (GameUI.Instance != null && !GameUI.Instance.IsRunning) return;
 
-        // Detect falling below the course into the canyon abyss
-        if (!isDying && transform.position.y < fallThreshold)
+        // Fall naturally all the way down until physically hitting the molten lava sea / ground
+        if (!isDying && transform.position.y <= lavaSeaLevel)
+        {
+            Die();
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.GetComponent<HazardTrigger>() != null || other.name.Contains("Lava") || other.name.Contains("Hazard"))
+        {
+            Die();
+        }
+    }
+
+    private void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.gameObject.GetComponent<HazardTrigger>() != null || hit.gameObject.name.Contains("Lava") || hit.gameObject.name.Contains("Hazard"))
         {
             Die();
         }
@@ -97,8 +114,8 @@ public class PlayerRespawn : MonoBehaviour
     }
 
     /// <summary>
-    /// Triggered immediately upon death (hitting hazard, lava, or falling).
-    /// Plays the death audio instantly at the moment of death, then respawns after a short delay.
+    /// Triggered immediately upon hitting the lava sea, ground, or hazards.
+    /// Plays the death audio right as you impact/die, keeps you in the lava during the sound, then respawns.
     /// </summary>
     public void Die()
     {
@@ -115,10 +132,10 @@ public class PlayerRespawn : MonoBehaviour
     {
         isDying = true;
 
-        // 1. Play the death sound effect IMMEDIATELY just as the player dies
+        // 1. Play the death sound effect IMMEDIATELY right as the player hits the lava / ground / hazard
         PlayDeathSound();
 
-        // 2. Halt movement and controller so player doesn't wander while dying
+        // 2. Halt movement and controller so player lands and stays in the lava/ground during death
         if (movement != null)
         {
             movement.enabled = false;
@@ -129,7 +146,7 @@ public class PlayerRespawn : MonoBehaviour
             controller.enabled = false;
         }
 
-        // 3. Wait for the death sound duration so the audio plays as you die, BEFORE respawning
+        // 3. Wait while the death sound plays in the lava/ground before returning to respawn
         yield return new WaitForSeconds(deathDelay);
 
         // 4. Now perform the respawn back at the checkpoint
