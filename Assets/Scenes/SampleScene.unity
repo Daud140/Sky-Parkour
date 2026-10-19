@@ -34712,6 +34712,8 @@ MonoBehaviour:
   checkpointText: {fileID: 1496237219}
   winPanel: {fileID: 1015843457}
   finalTimeText: {fileID: 459087457}
+  backgroundMusic: {fileID: 8300000, guid: b45e403db4003a84a81426ec11b7ec6a, type: 3}
+  musicVolume: 0.45
 --- !u!114 &1884433593
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -34824,6 +34826,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerRespawn
   currentCheckpoint: {fileID: 579759461}
+  deathSound: {fileID: 8300000, guid: 826ae86101dc5f64c96c56324fae2269, type: 3}
+  deathVolume: 0.85
 --- !u!114 &1893027474
 MonoBehaviour:
   m_ObjectHideFlags: 0

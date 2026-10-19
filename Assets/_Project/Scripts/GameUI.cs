@@ -15,6 +15,11 @@ public class GameUI : MonoBehaviour
     [SerializeField] private GameObject winPanel;
     [SerializeField] private TextMeshProUGUI finalTimeText;
 
+    [Header("Background Music")]
+    [SerializeField] private AudioClip backgroundMusic;
+    [Range(0f, 1f)] [SerializeField] private float musicVolume = 0.45f;
+    private AudioSource musicAudioSource;
+
     private float elapsedTime;
     private int claimedCheckpoints = 0;
     private bool isRunning = true;
@@ -31,8 +36,41 @@ public class GameUI : MonoBehaviour
         QualitySettings.vSyncCount = 1;
         Application.targetFrameRate = 60;
 
+        // Play looping horror background music throughout the game
+        SetupBackgroundMusic();
+
         // Auto-fix EventSystem input module dynamically at runtime
         FixEventSystem();
+    }
+
+    private void SetupBackgroundMusic()
+    {
+        musicAudioSource = GetComponent<AudioSource>();
+        if (musicAudioSource == null)
+        {
+            musicAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        musicAudioSource.playOnAwake = false;
+        musicAudioSource.loop = true;
+        musicAudioSource.spatialBlend = 0f; // 2D BGM heard uniformly across the whole game
+        musicAudioSource.volume = musicVolume;
+
+#if UNITY_EDITOR
+        if (backgroundMusic == null)
+        {
+            backgroundMusic = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/Audio/Horror.mp3");
+        }
+#endif
+
+        if (backgroundMusic != null)
+        {
+            musicAudioSource.clip = backgroundMusic;
+            if (!musicAudioSource.isPlaying)
+            {
+                musicAudioSource.Play();
+            }
+        }
     }
 
     private void FixEventSystem()

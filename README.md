@@ -40,8 +40,10 @@ A fast-paced, atmospheric first-person 3D parkour game built in **Unity 6** util
 
 ```
 Assets/_Project/
+├── Audio/            # Horror.mp3 (looping horror BGM) & myinstants.mp3 (death sound FX)
 ├── Materials/        # Basalt, magma rock, molten lava, storm clouds, skybox, embers & smoke
 ├── Scripts/
+│   ├── BackgroundMusic.cs  # Atmospheric looping horror BGM controller
 │   ├── Checkpoint.cs       # Trigger collision, material state swap, audio chime, UI updates
 │   ├── FinishLine.cs       # End-of-course detection and victory screen trigger
 │   ├── GameUI.cs           # HUD canvas controller (live timer, checkpoint tracker, 60 FPS lock)
@@ -49,7 +51,7 @@ Assets/_Project/
 │   ├── LavaFlow.cs         # Smooth texture UV scrolling for viscous lava & storm clouds
 │   ├── Oscillator.cs       # Trigonometric harmonic motion for moving platforms
 │   ├── PlayerMovement.cs   # CharacterController parkour physics, coyote time, and air control
-│   ├── PlayerRespawn.cs    # Coordinate tracking and character teleportation
+│   ├── PlayerRespawn.cs    # Death sound trigger (myinstants.mp3) and checkpoint teleportation
 │   └── Editor/
 │       └── SkyParkourBuilder.cs  # Procedural level generator and scene assembler
 ├── Settings/

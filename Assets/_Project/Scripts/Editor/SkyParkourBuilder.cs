@@ -75,9 +75,14 @@ public class SkyParkourBuilder : EditorWindow
         // 2. Prepare Materials
         var (matRock, matLava, matFissure, matSpire, matCpInactive, matCpActive, matSkybox, matClouds, matEmber, matSmoke) = GetOrCreateVolcanicMaterials();
 
-        // 3. Audio clips (Procedural tones)
+        // 3. Audio clips (Procedural tones & sound effects)
         AudioClip chimeClip = CreateToneClip("CheckpointChime", 880f, 0.25f);
         AudioClip winClip = CreateToneClip("VictoryFanfare", 587.3f, 0.6f);
+        AudioClip horrorClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/Audio/Horror.mp3");
+        AudioClip deathClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/_Project/Audio/myinstants.mp3");
+
+        // 3b. Atmospheric Looping Horror Background Music (Horror.mp3)
+        SetupBackgroundMusic(root.transform, horrorClip);
 
         // 4. Setup Dark Storm Skybox, Sun, Reduced Ambient Lighting, and Horizon Fog
         SetupVolcanicAtmosphere(matSkybox);
@@ -110,8 +115,8 @@ public class SkyParkourBuilder : EditorWindow
         startCheckpointObj.transform.parent = root.transform;
         startCheckpointObj.transform.position = new Vector3(0, 1.5f, 0);
 
-        // 13. Setup Player & Camera (Camera background set to dark red-black fallback)
-        GameObject player = SetupPlayer(root.transform, startCheckpointObj.transform);
+        // 13. Setup Player & Camera (Camera background set to dark red-black fallback, death sound assigned)
+        GameObject player = SetupPlayer(root.transform, startCheckpointObj.transform, deathClip);
 
         // 14. Stage 1: Precision Rock Jumps
         CreateRockPlatform("Platform_1", root.transform, new Vector3(0f, 0.9f, 8.5f), new Vector3(3.4f, 1.0f, 3.4f), matRock, 102);
@@ -1208,7 +1213,31 @@ public class SkyParkourBuilder : EditorWindow
         so.ApplyModifiedProperties();
     }
 
-    private static GameObject SetupPlayer(Transform parent, Transform startCheckpoint)
+    private static void SetupBackgroundMusic(Transform parent, AudioClip horrorClip)
+    {
+        GameObject musicObj = new GameObject("Background_Music");
+        musicObj.transform.parent = parent;
+        var bgm = musicObj.AddComponent<BackgroundMusic>();
+        var soBgm = new SerializedObject(bgm);
+        if (horrorClip != null)
+        {
+            soBgm.FindProperty("musicClip").objectReferenceValue = horrorClip;
+        }
+        soBgm.FindProperty("volume").floatValue = 0.45f;
+        soBgm.ApplyModifiedProperties();
+
+        var audioSource = musicObj.GetComponent<AudioSource>();
+        if (audioSource != null)
+        {
+            audioSource.clip = horrorClip;
+            audioSource.loop = true;
+            audioSource.playOnAwake = true;
+            audioSource.volume = 0.45f;
+            audioSource.spatialBlend = 0f;
+        }
+    }
+
+    private static GameObject SetupPlayer(Transform parent, Transform startCheckpoint, AudioClip deathClip = null)
     {
         GameObject player = GameObject.FindWithTag("Player");
         if (player == null)
@@ -1254,6 +1283,10 @@ public class SkyParkourBuilder : EditorWindow
         if (pr == null) pr = player.AddComponent<PlayerRespawn>();
         var soPr = new SerializedObject(pr);
         soPr.FindProperty("currentCheckpoint").objectReferenceValue = startCheckpoint;
+        if (deathClip != null)
+        {
+            soPr.FindProperty("deathSound").objectReferenceValue = deathClip;
+        }
         soPr.ApplyModifiedProperties();
 
         return player;
